@@ -7,8 +7,14 @@ ENV PROJECT github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservic
 WORKDIR /go/src/$PROJECT
 
 # restore dependencies
-COPY Gopkg.* ./
-RUN dep ensure --vendor-only -v
+# COPY Gopkg.* ./
+# RUN dep ensure --vendor-only -v
+
+# Moved to vgo/Go Modules
+ENV GO111MODULE=on
+COPY go.mod ./
+COPY go.sum ./
+RUN go get .
 
 COPY . .
 RUN go build -gcflags='-N -l' -o /checkoutservice .
