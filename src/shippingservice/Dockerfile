@@ -7,16 +7,10 @@ ENV PROJECT github.com/GoogleCloudPlatform/microservices-demo/src/shippingservic
 WORKDIR /go/src/$PROJECT
 
 # restore dependencies
-# COPY Gopkg.* ./
-# RUN dep ensure --vendor-only -v
-# COPY . .
-# RUN go install .
-
-# Moved to vgo/Go Modules
-ENV GO111MODULE=on
-COPY go.mod ./
-COPY go.sum ./
-RUN go get .
+COPY Gopkg.* ./
+RUN dep ensure --vendor-only -v
+COPY . .
+RUN go install .
 
 FROM alpine as release
 RUN apk add --no-cache ca-certificates

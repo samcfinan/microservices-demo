@@ -7,14 +7,8 @@ ENV PROJECT github.com/GoogleCloudPlatform/microservices-demo/src/productcatalog
 WORKDIR /go/src/$PROJECT
 
 # restore dependencies
-# COPY Gopkg.* ./
-# RUN dep ensure --vendor-only -v
-
-# Moved to vgo/Go Modules
-ENV GO111MODULE=on
-COPY go.mod ./
-COPY go.sum ./
-RUN go get .
+COPY Gopkg.* ./
+RUN dep ensure --vendor-only -v
 
 COPY . .
 RUN go build -o /productcatalogservice .
