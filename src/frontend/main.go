@@ -81,7 +81,7 @@ type frontendServer struct {
 }
 
 func main() {
-	ctx := context.Background()
+	// ctx := context.Background()
 	log := logrus.New()
 	log.Level = logrus.DebugLevel
 	log.Formatter = &logrus.JSONFormatter{
@@ -94,8 +94,8 @@ func main() {
 	}
 	log.Out = os.Stdout
 
-	go initProfiling(log, "frontend", "1.0.0")
-	go initTracing(log)
+	// go initProfiling(log, "frontend", "1.0.0")
+	// go initTracing(log)
 
 	srvPort := port
 	if os.Getenv("PORT") != "" {
@@ -111,13 +111,13 @@ func main() {
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_SERVICE_ADDR")
 	mustMapEnv(&svc.adSvcAddr, "AD_SERVICE_ADDR")
 
-	mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr)
-	mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr)
-	mustConnGRPC(ctx, &svc.cartSvcConn, svc.cartSvcAddr)
-	mustConnGRPC(ctx, &svc.recommendationSvcConn, svc.recommendationSvcAddr)
-	mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr)
-	mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr)
-	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr)
+	// mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr)
+	// mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr)
+	// mustConnGRPC(ctx, &svc.cartSvcConn, svc.cartSvcAddr)
+	// mustConnGRPC(ctx, &svc.recommendationSvcConn, svc.recommendationSvcAddr)
+	// mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr)
+	// mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr)
+	// mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
@@ -228,7 +228,7 @@ func initProfiling(log logrus.FieldLogger, service, version string) {
 			Service:        service,
 			ServiceVersion: version,
 			// ProjectID must be set if not running on GCP.
-			// ProjectID: "my-project",
+			ProjectID: "my-project",
 		}); err != nil {
 			log.Warnf("warn: failed to start profiler: %+v", err)
 		} else {

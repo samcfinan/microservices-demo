@@ -16,11 +16,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"math/rand"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -41,49 +41,51 @@ var (
 
 func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
-	log.WithField("currency", currentCurrency(r)).Info("home")
-	currencies, err := fe.getCurrencies(r.Context())
-	if err != nil {
-		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve currencies"), http.StatusInternalServerError)
-		return
-	}
-	products, err := fe.getProducts(r.Context())
-	if err != nil {
-		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve products"), http.StatusInternalServerError)
-		return
-	}
-	cart, err := fe.getCart(r.Context(), sessionID(r))
-	if err != nil {
-		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve cart"), http.StatusInternalServerError)
-		return
-	}
+	// log.WithField("currency", currentCurrency(r)).Info("home")
+	// currencies, err := fe.getCurrencies(r.Context())
+	// if err != nil {
+	// 	renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve currencies"), http.StatusInternalServerError)
+	// 	return
+	// }
+	// products, err := fe.getProducts(r.Context())
+	// if err != nil {
+	// 	renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve products"), http.StatusInternalServerError)
+	// 	return
+	// }
+	// cart, err := fe.getCart(r.Context(), sessionID(r))
+	// if err != nil {
+	// 	renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve cart"), http.StatusInternalServerError)
+	// 	return
+	// }
 
-	type productView struct {
-		Item  *pb.Product
-		Price *pb.Money
-	}
-	ps := make([]productView, len(products))
-	for i, p := range products {
-		price, err := fe.convertCurrency(r.Context(), p.GetPriceUsd(), currentCurrency(r))
-		if err != nil {
-			renderHTTPError(log, r, w, errors.Wrapf(err, "failed to do currency conversion for product %s", p.GetId()), http.StatusInternalServerError)
-			return
-		}
-		ps[i] = productView{p, price}
-	}
+	// type productView struct {
+	// 	Item  *pb.Product
+	// 	Price *pb.Money
+	// }
+	// ps := make([]productView, len(products))
+	// for i, p := range products {
+	// 	price, err := fe.convertCurrency(r.Context(), p.GetPriceUsd(), currentCurrency(r))
+	// 	if err != nil {
+	// 		renderHTTPError(log, r, w, errors.Wrapf(err, "failed to do currency conversion for product %s", p.GetId()), http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// 	ps[i] = productView{p, price}
+	// }
 
-	if err := templates.ExecuteTemplate(w, "home", map[string]interface{}{
-		"session_id":    sessionID(r),
-		"request_id":    r.Context().Value(ctxKeyRequestID{}),
-		"user_currency": currentCurrency(r),
-		"currencies":    currencies,
-		"products":      ps,
-		"cart_size":     len(cart),
-		"banner_color":  os.Getenv("BANNER_COLOR"), // illustrates canary deployments
-		"ad":            fe.chooseAd(r.Context(), []string{}, log),
-	}); err != nil {
-		log.Error(err)
-	}
+	// if err := templates.ExecuteTemplate(w, "home", map[string]interface{}{
+	// 	"session_id":    sessionID(r),
+	// 	"request_id":    r.Context().Value(ctxKeyRequestID{}),
+	// 	"user_currency": currentCurrency(r),
+	// 	"currencies":    currencies,
+	// 	"products":      ps,
+	// 	"cart_size":     len(cart),
+	// 	"banner_color":  os.Getenv("BANNER_COLOR"), // illustrates canary deployments
+	// 	"ad":            fe.chooseAd(r.Context(), []string{}, log),
+	// }); err != nil {
+	// 	log.Error(err)
+	// }
+	log.WithField("path", "/")
+	json.NewEncoder(w).Encode(map[string]string{"Status": "200"})
 }
 
 func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request) {
