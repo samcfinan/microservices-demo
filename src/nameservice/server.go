@@ -20,10 +20,13 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+
+	// _ "github.com/lib/pq"
 
 	pb "github.com/samcfinan/microservices-demo/src/nameservice/genproto"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
@@ -68,24 +71,16 @@ func main() {
 	// go initProfiling("nameservice", "1.0.0")
 	flag.Parse()
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGUSR1, syscall.SIGUSR2)
-	go func() {
-		for {
-			sig := <-sigs
-			log.Printf("Received signal: %s", sig)
-			if sig == syscall.SIGUSR1 {
-				reloadCatalog = true
-				log.Infof("Enable catalog reloading")
-			} else {
-				reloadCatalog = false
-				log.Infof("Disable catalog reloading")
-			}
-		}
-	}()
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=postgres port=%s user=%s dbname=%s password=%s sslmode=disable", os.Getenv("POSTGRES_PORT"), os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_DB"), os.Getenv("POSTGRES_PASS")))
+	defer db.Close()
+	if err != nil {
+		log.Panic("Cannot connect to Postgres:", err)
+	}
 
 	log.Infof("starting grpc server at :%d", *port)
 	run(*port)
+
+	// Blocking
 	select {}
 }
 

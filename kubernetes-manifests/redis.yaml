@@ -15,15 +15,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis-cart
+  name: redis
 spec:
   selector:
     matchLabels:
-      app: redis-cart
+      app: redis
   template:
     metadata:
       labels:
-        app: redis-cart
+        app: redis
     spec:
       containers:
       - name: redis

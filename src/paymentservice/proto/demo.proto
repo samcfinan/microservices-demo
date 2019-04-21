@@ -1,6 +1,21 @@
 syntax = "proto3";
 
-package hipstershop;
+package nuralogix;
+
+// ---------------Name Service----------------
+
+service NameService {
+    rpc CheckName(NameRequest) returns (NameResponse) {}
+}
+
+message NameRequest {
+    string name = 1;
+}
+
+message NameResponse {
+    string name = 1;
+    int32 name_length = 2;
+}
 
 // -----------------Cart service-----------------
 

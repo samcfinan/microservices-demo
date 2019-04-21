@@ -3,25 +3,18 @@ module github.com/samcfinan/microservices-demo/src/nameservice
 go 1.12
 
 require (
-	cloud.google.com/go v0.34.0
+	cloud.google.com/go v0.37.2
 	contrib.go.opencensus.io/exporter/stackdriver v0.5.0
-	git.apache.org/thrift.git v0.0.0-20190117003404-67df34afa782
+	git.apache.org/thrift.git v0.12.0 // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/protobuf v1.3.1
-	github.com/google/go-cmp v0.2.0
-	github.com/google/pprof v0.0.0-20190109223431-e84dfd68c163
-	github.com/googleapis/gax-go v0.0.0-20181219185031-c8a15bac9b9f
-	github.com/konsorten/go-windows-terminal-sequences v1.0.1
-	github.com/samcfinan/microservices-demo v0.1.0
+	github.com/google/pprof v0.0.0-20190109223431-e84dfd68c163 // indirect
+	github.com/grpc-ecosystem/grpc-gateway v1.6.2 // indirect
+	github.com/jinzhu/gorm v1.9.4
+	github.com/kisielk/gotool v1.0.0 // indirect
+	github.com/lib/pq v1.1.0 // indirect
 	github.com/sirupsen/logrus v1.3.0
-	go.opencensus.io v0.18.0
-	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
-	golang.org/x/net v0.0.0-20190119204137-ed066c81e75e
-	golang.org/x/oauth2 v0.0.0-20190115181402-5dab4167f31c
-	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
-	golang.org/x/sys v0.0.0-20190116161447-11f53e031339
-	golang.org/x/text v0.3.0
-	google.golang.org/api v0.0.0-20190117000611-43037ff31f69
-	google.golang.org/appengine v1.4.0
-	google.golang.org/genproto v0.0.0-20190111180523-db91494dd46c
-	google.golang.org/grpc v1.17.0
+	go.opencensus.io v0.19.2
+	golang.org/x/build v0.0.0-20190419150332-0bbb12ff1571 // indirect
+	google.golang.org/grpc v1.19.0
 )

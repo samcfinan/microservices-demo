@@ -9,10 +9,11 @@ WORKDIR /go/src/$PROJECT
 # restore dependencies
 ENV GO111MODULE=on
 COPY . .
-COPY go.mod ./
-COPY go.sum ./
-RUN go mod download
-EXPOSE 8080
+# COPY go.mod ./
+# COPY go.sum ./
+COPY ./vendor .
+# RUN go mod download
+# gRPC port
 EXPOSE 9556
-RUN go build .
+RUN go build -mod vendor .
 ENTRYPOINT ["./nameservice"]

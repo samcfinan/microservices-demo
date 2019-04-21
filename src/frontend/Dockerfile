@@ -9,11 +9,13 @@ WORKDIR /go/src/$PROJECT
 # restore dependencies
 ENV GO111MODULE=on
 COPY . .
+RUN ls
 COPY go.mod ./
 COPY go.sum ./
-RUN go mod download
+# RUN go mod download
 COPY ./templates ./templates
 COPY ./static ./static
+COPY ./vendor ./vendor
 EXPOSE 8080
-RUN go build .
+RUN go build -mod vendor .
 ENTRYPOINT ["./frontend"]
