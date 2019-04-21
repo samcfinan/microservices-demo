@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
+	pb "github.com/samcfinan/microservices-demo/src/frontend/genproto"
 
 	"github.com/pkg/errors"
 )
@@ -40,6 +40,12 @@ func (fe *frontendServer) getCurrencies(ctx context.Context) ([]string, error) {
 		}
 	}
 	return out, nil
+}
+
+func (fe *frontendServer) getNameLength(ctx context.Context, name string) (*pb.NameResponse, error) {
+	resp, err := pb.NewNameServiceClient(fe.nameSvcConn).CheckName(ctx, &pb.NameRequest{Name: name})
+
+	return resp, err
 }
 
 func (fe *frontendServer) getProducts(ctx context.Context) ([]*pb.Product, error) {

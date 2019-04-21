@@ -15,35 +15,48 @@
 package main
 
 import (
+	"bytes"
+	"context"
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
+	"os/signal"
+	"strings"
+	"sync"
+	"syscall"
 	"time"
+
+	pb "github.com/samcfinan/microservices-demo/src/nameservice/genproto"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
 	"cloud.google.com/go/profiler"
 	"contrib.go.opencensus.io/exporter/stackdriver"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/sirupsen/logrus"
 	"go.opencensus.io/exporter/jaeger"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
-	pb "github.com/samcfinan/microservices-demo/src/shippingservice/genproto"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-const (
-	defaultPort = "50051"
-)
+var (
+	cat          pb.ListProductsResponse
+	catalogMutex *sync.Mutex
+	log          *logrus.Logger
+	extraLatency time.Duration
 
-var log *logrus.Logger
+	port = flag.Int("port", 9556, "port to listen at")
+
+	reloadCatalog bool
+)
 
 func init() {
 	log = logrus.New()
-	log.Level = logrus.DebugLevel
 	log.Formatter = &logrus.JSONFormatter{
 		FieldMap: logrus.FieldMap{
 			logrus.FieldKeyTime:  "timestamp",
@@ -53,80 +66,46 @@ func init() {
 		TimestampFormat: time.RFC3339Nano,
 	}
 	log.Out = os.Stdout
+	catalogMutex = &sync.Mutex{}
 }
 
 func main() {
-	go initTracing()
-	go initProfiling("shippingservice", "1.0.0")
+	// go initTracing()
+	// go initProfiling("productcatalogservice", "1.0.0")
+	flag.Parse()
 
-	port := defaultPort
-	if value, ok := os.LookupEnv("APP_PORT"); ok {
-		port = value
-	}
-	port = fmt.Sprintf(":%s", port)
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGUSR1, syscall.SIGUSR2)
+	go func() {
+		for {
+			sig := <-sigs
+			log.Printf("Received signal: %s", sig)
+			if sig == syscall.SIGUSR1 {
+				reloadCatalog = true
+				log.Infof("Enable catalog reloading")
+			} else {
+				reloadCatalog = false
+				log.Infof("Disable catalog reloading")
+			}
+		}
+	}()
 
-	lis, err := net.Listen("tcp", port)
+	log.Infof("starting grpc server at :%d", *port)
+	run(*port)
+	select {}
+}
+
+func run(port int) string {
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatal(err)
 	}
 	srv := grpc.NewServer(grpc.StatsHandler(&ocgrpc.ServerHandler{}))
-	svc := &server{}
-	pb.RegisterShippingServiceServer(srv, svc)
+	svc := &nameServer{}
+	pb.RegisterNameServiceServer(srv, svc)
 	// healthpb.RegisterHealthServer(srv, svc)
-	log.Infof("Shipping Service listening on port %s", port)
-
-	// Register reflection service on gRPC server.
-	reflection.Register(srv)
-	if err := srv.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
-}
-
-// server controls RPC service responses.
-type server struct{}
-
-// Check is for health checking.
-func (s *server) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
-	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
-}
-
-// GetQuote produces a shipping quote (cost) in USD.
-func (s *server) GetQuote(ctx context.Context, in *pb.GetQuoteRequest) (*pb.GetQuoteResponse, error) {
-	log.Info("[GetQuote] received request")
-	defer log.Info("[GetQuote] completed request")
-
-	// 1. Our quote system requires the total number of items to be shipped.
-	count := 0
-	for _, item := range in.Items {
-		count += int(item.Quantity)
-	}
-
-	// 2. Generate a quote based on the total number of items to be shipped.
-	quote := CreateQuoteFromCount(count)
-
-	// 3. Generate a response.
-	return &pb.GetQuoteResponse{
-		CostUsd: &pb.Money{
-			CurrencyCode: "USD",
-			Units:        int64(quote.Dollars),
-			Nanos:        int32(quote.Cents * 10000000)},
-	}, nil
-
-}
-
-// ShipOrder mocks that the requested items will be shipped.
-// It supplies a tracking ID for notional lookup of shipment delivery status.
-func (s *server) ShipOrder(ctx context.Context, in *pb.ShipOrderRequest) (*pb.ShipOrderResponse, error) {
-	log.Info("[ShipOrder] received request")
-	defer log.Info("[ShipOrder] completed request")
-	// 1. Create a Tracking ID
-	baseAddress := fmt.Sprintf("%s, %s, %s", in.Address.StreetAddress, in.Address.City, in.Address.State)
-	id := CreateTrackingId(baseAddress)
-
-	// 2. Generate a response.
-	return &pb.ShipOrderResponse{
-		TrackingId: id,
-	}, nil
+	go srv.Serve(l)
+	return l.Addr().String()
 }
 
 func initJaegerTracing() {
@@ -135,13 +114,12 @@ func initJaegerTracing() {
 		log.Info("jaeger initialization disabled.")
 		return
 	}
-
 	// Register the Jaeger exporter to be able to retrieve
 	// the collected spans.
 	exporter, err := jaeger.NewExporter(jaeger.Options{
 		Endpoint: fmt.Sprintf("http://%s", svcAddr),
 		Process: jaeger.Process{
-			ServiceName: "shippingservice",
+			ServiceName: "productcatalogservice",
 		},
 	})
 	if err != nil {
@@ -155,7 +133,7 @@ func initStats(exporter *stackdriver.Exporter) {
 	view.SetReportingPeriod(60 * time.Second)
 	view.RegisterExporter(exporter)
 	if err := view.Register(ocgrpc.DefaultServerViews...); err != nil {
-		log.Warn("Error registering default server views")
+		log.Info("Error registering default server views")
 	} else {
 		log.Info("Registered default server views")
 	}
@@ -209,4 +187,76 @@ func initProfiling(service, version string) {
 		time.Sleep(d)
 	}
 	log.Warn("could not initialize stackdriver profiler after retrying, giving up")
+}
+
+type productCatalog struct{}
+
+type nameServer struct{}
+
+func readCatalogFile(catalog *pb.ListProductsResponse) error {
+	catalogMutex.Lock()
+	defer catalogMutex.Unlock()
+	catalogJSON, err := ioutil.ReadFile("products.json")
+	if err != nil {
+		log.Fatalf("failed to open product catalog json file: %v", err)
+		return err
+	}
+	if err := jsonpb.Unmarshal(bytes.NewReader(catalogJSON), catalog); err != nil {
+		log.Warnf("failed to parse the catalog JSON: %v", err)
+		return err
+	}
+	log.Info("successfully parsed product catalog json")
+	return nil
+}
+
+func parseCatalog() []*pb.Product {
+	if reloadCatalog || len(cat.Products) == 0 {
+		err := readCatalogFile(&cat)
+		if err != nil {
+			return []*pb.Product{}
+		}
+	}
+	return cat.Products
+}
+
+func (n *nameServer) CheckName(ctx context.Context, nr *pb.NameRequest) (*pb.NameResponse, error) {
+	name := nr.GetName()
+	nameLength := int32(len(name))
+	return &pb.NameResponse{Name: name, NameLength: nameLength}, nil
+}
+
+func (p *productCatalog) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
+}
+
+func (p *productCatalog) ListProducts(context.Context, *pb.Empty) (*pb.ListProductsResponse, error) {
+	time.Sleep(extraLatency)
+	return &pb.ListProductsResponse{Products: parseCatalog()}, nil
+}
+
+func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.Product, error) {
+	time.Sleep(extraLatency)
+	var found *pb.Product
+	for i := 0; i < len(parseCatalog()); i++ {
+		if req.Id == parseCatalog()[i].Id {
+			found = parseCatalog()[i]
+		}
+	}
+	if found == nil {
+		return nil, status.Errorf(codes.NotFound, "no product with ID %s", req.Id)
+	}
+	return found, nil
+}
+
+func (p *productCatalog) SearchProducts(ctx context.Context, req *pb.SearchProductsRequest) (*pb.SearchProductsResponse, error) {
+	time.Sleep(extraLatency)
+	// Intepret query as a substring match in name or description.
+	var ps []*pb.Product
+	for _, p := range parseCatalog() {
+		if strings.Contains(strings.ToLower(p.Name), strings.ToLower(req.Query)) ||
+			strings.Contains(strings.ToLower(p.Description), strings.ToLower(req.Query)) {
+			ps = append(ps, p)
+		}
+	}
+	return &pb.SearchProductsResponse{Results: ps}, nil
 }

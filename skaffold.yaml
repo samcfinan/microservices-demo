@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: skaffold/v1beta2
+apiVersion: skaffold/v1beta7
 kind: Config
 build:
   artifacts:
@@ -38,6 +38,8 @@ build:
   #   context: src/cartservice
   - image: frontend
     context: src/frontend
+  - image: nameservice
+    context: src/nameservice
   # - image: loadgenerator
   #   context: src/loadgenerator
   # - image: adservice

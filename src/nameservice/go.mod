@@ -1,4 +1,4 @@
-module github.com/samcfinan/microservices-demo/src/frontend
+module github.com/samcfinan/microservices-demo/src/nameservice
 
 go 1.12
 
@@ -9,11 +9,9 @@ require (
 	github.com/golang/protobuf v1.3.1
 	github.com/google/go-cmp v0.2.0
 	github.com/google/pprof v0.0.0-20190109223431-e84dfd68c163
-	github.com/google/uuid v1.1.1
 	github.com/googleapis/gax-go v0.0.0-20181219185031-c8a15bac9b9f
-	github.com/gorilla/mux v1.7.1
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1
-	github.com/pkg/errors v0.8.1
+	github.com/samcfinan/microservices-demo v0.1.0
 	github.com/sirupsen/logrus v1.3.0
 	go.opencensus.io v0.18.0
 	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc

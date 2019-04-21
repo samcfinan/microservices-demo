@@ -76,12 +76,15 @@ type frontendServer struct {
 	shippingSvcAddr string
 	shippingSvcConn *grpc.ClientConn
 
+	nameSvcAddr string
+	nameSvcConn *grpc.ClientConn
+
 	adSvcAddr string
 	adSvcConn *grpc.ClientConn
 }
 
 func main() {
-	// ctx := context.Background()
+	ctx := context.Background()
 	log := logrus.New()
 	log.Level = logrus.DebugLevel
 	log.Formatter = &logrus.JSONFormatter{
@@ -110,7 +113,9 @@ func main() {
 	mustMapEnv(&svc.checkoutSvcAddr, "CHECKOUT_SERVICE_ADDR")
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_SERVICE_ADDR")
 	mustMapEnv(&svc.adSvcAddr, "AD_SERVICE_ADDR")
+	mustMapEnv(&svc.nameSvcAddr, "NAME_SERVICE_ADDR")
 
+	mustConnGRPC(ctx, &svc.nameSvcConn, svc.nameSvcAddr)
 	// mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr)
 	// mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr)
 	// mustConnGRPC(ctx, &svc.cartSvcConn, svc.cartSvcAddr)
@@ -121,16 +126,14 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
-	r.HandleFunc("/product/{id}", svc.productHandler).Methods(http.MethodGet, http.MethodHead)
-	r.HandleFunc("/cart", svc.viewCartHandler).Methods(http.MethodGet, http.MethodHead)
-	r.HandleFunc("/cart", svc.addToCartHandler).Methods(http.MethodPost)
-	r.HandleFunc("/cart/empty", svc.emptyCartHandler).Methods(http.MethodPost)
-	r.HandleFunc("/setCurrency", svc.setCurrencyHandler).Methods(http.MethodPost)
-	r.HandleFunc("/logout", svc.logoutHandler).Methods(http.MethodGet)
-	r.HandleFunc("/cart/checkout", svc.placeOrderHandler).Methods(http.MethodPost)
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
-	r.HandleFunc("/robots.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "User-agent: *\nDisallow: /") })
-	r.HandleFunc("/_healthz", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "ok") })
+	r.HandleFunc("/name/{name}", svc.nameHandler).Methods(http.MethodGet, http.MethodHead)
+	// r.HandleFunc("/product/{id}", svc.productHandler).Methods(http.MethodGet, http.MethodHead)
+	// r.HandleFunc("/cart", svc.addToCartHandler).Methods(http.MethodPost)
+	// r.HandleFunc("/setCurrency", svc.setCurrencyHandler).Methods(http.MethodPost)
+	// r.HandleFunc("/logout", svc.logoutHandler).Methods(http.MethodGet)
+	// r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	// r.HandleFunc("/robots.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "User-agent: *\nDisallow: /") })
+	// r.HandleFunc("/_healthz", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "ok") })
 
 	var handler http.Handler = r
 	handler = &logHandler{log: log, next: handler} // add logging
