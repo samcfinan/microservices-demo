@@ -26,8 +26,6 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	// _ "github.com/lib/pq"
-
 	pb "github.com/samcfinan/microservices-demo/src/nameservice/genproto"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 

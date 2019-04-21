@@ -19,6 +19,7 @@ import (
 	"time"
 
 	pb "github.com/samcfinan/microservices-demo/src/frontend/genproto"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/pkg/errors"
 )
@@ -130,4 +131,12 @@ func (fe *frontendServer) getAd(ctx context.Context, ctxKeys []string) ([]*pb.Ad
 		ContextKeys: ctxKeys,
 	})
 	return resp.GetAds(), errors.Wrap(err, "failed to get ads")
+}
+
+func (fe *frontendServer) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
+}
+
+func (fe *frontendServer) Watch(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
 }
