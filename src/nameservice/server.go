@@ -15,15 +15,12 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -33,15 +30,12 @@ import (
 
 	"cloud.google.com/go/profiler"
 	"contrib.go.opencensus.io/exporter/stackdriver"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/sirupsen/logrus"
 	"go.opencensus.io/exporter/jaeger"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -71,7 +65,7 @@ func init() {
 
 func main() {
 	// go initTracing()
-	// go initProfiling("productcatalogservice", "1.0.0")
+	// go initProfiling("nameservice", "1.0.0")
 	flag.Parse()
 
 	sigs := make(chan os.Signal, 1)
@@ -119,7 +113,7 @@ func initJaegerTracing() {
 	exporter, err := jaeger.NewExporter(jaeger.Options{
 		Endpoint: fmt.Sprintf("http://%s", svcAddr),
 		Process: jaeger.Process{
-			ServiceName: "productcatalogservice",
+			ServiceName: "nameservice",
 		},
 	})
 	if err != nil {
@@ -189,35 +183,7 @@ func initProfiling(service, version string) {
 	log.Warn("could not initialize stackdriver profiler after retrying, giving up")
 }
 
-type productCatalog struct{}
-
 type nameServer struct{}
-
-func readCatalogFile(catalog *pb.ListProductsResponse) error {
-	catalogMutex.Lock()
-	defer catalogMutex.Unlock()
-	catalogJSON, err := ioutil.ReadFile("products.json")
-	if err != nil {
-		log.Fatalf("failed to open product catalog json file: %v", err)
-		return err
-	}
-	if err := jsonpb.Unmarshal(bytes.NewReader(catalogJSON), catalog); err != nil {
-		log.Warnf("failed to parse the catalog JSON: %v", err)
-		return err
-	}
-	log.Info("successfully parsed product catalog json")
-	return nil
-}
-
-func parseCatalog() []*pb.Product {
-	if reloadCatalog || len(cat.Products) == 0 {
-		err := readCatalogFile(&cat)
-		if err != nil {
-			return []*pb.Product{}
-		}
-	}
-	return cat.Products
-}
 
 func (n *nameServer) CheckName(ctx context.Context, nr *pb.NameRequest) (*pb.NameResponse, error) {
 	name := nr.GetName()
@@ -225,38 +191,10 @@ func (n *nameServer) CheckName(ctx context.Context, nr *pb.NameRequest) (*pb.Nam
 	return &pb.NameResponse{Name: name, NameLength: nameLength}, nil
 }
 
-func (p *productCatalog) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+func (n *nameServer) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
 	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
 }
 
-func (p *productCatalog) ListProducts(context.Context, *pb.Empty) (*pb.ListProductsResponse, error) {
-	time.Sleep(extraLatency)
-	return &pb.ListProductsResponse{Products: parseCatalog()}, nil
-}
-
-func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.Product, error) {
-	time.Sleep(extraLatency)
-	var found *pb.Product
-	for i := 0; i < len(parseCatalog()); i++ {
-		if req.Id == parseCatalog()[i].Id {
-			found = parseCatalog()[i]
-		}
-	}
-	if found == nil {
-		return nil, status.Errorf(codes.NotFound, "no product with ID %s", req.Id)
-	}
-	return found, nil
-}
-
-func (p *productCatalog) SearchProducts(ctx context.Context, req *pb.SearchProductsRequest) (*pb.SearchProductsResponse, error) {
-	time.Sleep(extraLatency)
-	// Intepret query as a substring match in name or description.
-	var ps []*pb.Product
-	for _, p := range parseCatalog() {
-		if strings.Contains(strings.ToLower(p.Name), strings.ToLower(req.Query)) ||
-			strings.Contains(strings.ToLower(p.Description), strings.ToLower(req.Query)) {
-			ps = append(ps, p)
-		}
-	}
-	return &pb.SearchProductsResponse{Results: ps}, nil
+func (n *nameServer) Watch(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
 }
