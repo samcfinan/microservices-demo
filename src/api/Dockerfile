@@ -1,6 +1,6 @@
 FROM golang:1.12-alpine
 RUN apk add --no-cache ca-certificates git
-ENV PROJECT github.com/samcfinan/microservices-demo/src/frontend
+ENV PROJECT github.com/samcfinan/microservices-demo/src/api
 WORKDIR /go/src/$PROJECT
 
 # restore dependencies
@@ -9,9 +9,7 @@ COPY . .
 COPY go.mod ./
 COPY go.sum ./
 # RUN go mod download
-COPY ./templates ./templates
-COPY ./static ./static
 COPY ./vendor ./vendor
 EXPOSE 8080
 RUN go build -mod vendor .
-ENTRYPOINT ["./frontend"]
+ENTRYPOINT ["./api"]

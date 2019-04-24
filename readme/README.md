@@ -55,7 +55,7 @@ You will also require the language binary for any language you plan to write a s
 
 Run the demo:
 
-1. Download and vendor dependencies for Go services. `cd` into each Go service and run `go mod vendor`.
+1. Download and vendor dependencies for Go services. `cd` into each Go service and run `go mod vendor`. Note that your `GO111MODULE` environment variable must be set to `on`.
 2. Start minikube with sufficient resources. `minikube start --memory=4000 --cpus=3 --disk-size=32g`
 3. Run `kubectl get nodes` to verify you're connected to “Kubernetes on Docker”.
 4. Run `skaffold run` (first time will be slow, it can take ~5-10 minutes). This will build and deploy the application. If you need to rebuild the images automatically as you refactor the code, run `skaffold dev` command.

@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: api
 spec:
   selector:
     matchLabels:
-      app: frontend
+      app: api
   template:
     metadata:
       labels:
-        app: frontend
+        app: api
     spec:
       containers:
         - name: server
-          image: frontend
+          image: api
           ports:
           - containerPort: 8080
           env:
@@ -32,11 +32,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend
+  name: api
 spec:
   type: ClusterIP
   selector:
-    app: frontend
+    app: api
   ports:
   - name: http
     port: 80
@@ -48,11 +48,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-external
+  name: api-external
 spec:
   type: LoadBalancer
   selector:
-    app: frontend
+    app: api
   ports:
   - name: http
     port: 80

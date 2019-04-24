@@ -22,6 +22,6 @@ spec:
   http:
   - route:
     - destination:
-        host: frontend
+        host: api
         port:
           number: 80

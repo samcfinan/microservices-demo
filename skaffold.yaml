@@ -7,8 +7,8 @@ build:
   # must provide a "default repo" using one of the methods described 
   # here:
   # https://skaffold.dev/docs/concepts/#image-repository-handling
-  - image: frontend
-    context: src/frontend
+  - image: api
+    context: src/api
   - image: nameservice
     context: src/nameservice
   tagPolicy:
