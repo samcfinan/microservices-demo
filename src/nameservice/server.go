@@ -1,17 +1,3 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package main
 
 import (
@@ -22,6 +8,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -127,8 +114,6 @@ func initStats(exporter *stackdriver.Exporter) {
 }
 
 func initStackDriverTracing() {
-	// TODO(ahmetb) this method is duplicated in other microservices using Go
-	// since they are not sharing packages.
 	for i := 1; i <= 3; i++ {
 		exporter, err := stackdriver.NewExporter(stackdriver.Options{})
 		if err != nil {
@@ -155,8 +140,6 @@ func initTracing() {
 }
 
 func initProfiling(service, version string) {
-	// TODO(ahmetb) this method is duplicated in other microservices using Go
-	// since they are not sharing packages.
 	for i := 1; i <= 3; i++ {
 		if err := profiler.Start(profiler.Config{
 			Service:        service,
@@ -181,7 +164,38 @@ type nameServer struct{}
 func (n *nameServer) CheckName(ctx context.Context, nr *pb.NameRequest) (*pb.NameResponse, error) {
 	name := nr.GetName()
 	nameLength := int32(len(name))
+	letters := strings.Split(name, "")
+	perms := permutations(letters)
+	fmt.Println(perms)
 	return &pb.NameResponse{Name: name, NameLength: nameLength}, nil
+}
+
+func permutations(arr []string) [][]string {
+	var helper func([]string, int)
+	res := [][]string{}
+
+	helper = func(arr []string, n int){
+			if n == 1{
+					tmp := make([]string, len(arr))
+					copy(tmp, arr)
+					res = append(res, tmp)
+			} else {
+					for i := 0; i < n; i++{
+							helper(arr, n - 1)
+							if n % 2 == 1{
+									tmp := arr[i]
+									arr[i] = arr[n - 1]
+									arr[n - 1] = tmp
+							} else {
+									tmp := arr[0]
+									arr[0] = arr[n - 1]
+									arr[n - 1] = tmp
+							}
+					}
+			}
+	}
+	helper(arr, len(arr))
+	return res
 }
 
 func (n *nameServer) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {

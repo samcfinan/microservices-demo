@@ -15,6 +15,15 @@ message NameRequest {
 message NameResponse {
     string name = 1;
     int32 name_length = 2;
+    NamePermutations permutations = 3;
+}
+
+message NamePermutations {
+    repeated Permutation permutations = 1;
+}
+
+message Permutation {
+    repeated string letter = 1;
 }
 
 // -----------------Cart service-----------------

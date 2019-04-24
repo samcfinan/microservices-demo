@@ -40,15 +40,6 @@ spec:
           value: "postgresadmin"
         - name: POSTGRES_PASS
           value: "admin123"
-        # readinessProbe:
-        #   exec:
-        #     command: ["/bin/grpc_health_probe", "-addr=:9556"]
-        # livenessProbe:
-        #   exec:
-        #     command: ["/bin/grpc_health_probe", "-addr=:9556"]
-#        env:
-#          - name: JAEGER_SERVICE_ADDR
-#            value: "jaeger-collector:14268"
         resources:
           requests:
             cpu: 100m
@@ -59,6 +50,7 @@ spec:
       initContainers:
       - name: check-db-ready
         image: postgres
+        # Wait for Postgres to run
         command: ['sh', '-c', 
           'until pg_isready -h postgres -p 5432; 
           do echo waiting for database; sleep 2; done;']

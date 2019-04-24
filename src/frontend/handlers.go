@@ -81,7 +81,6 @@ func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
 
 func (fe *frontendServer) nameHandler(w http.ResponseWriter, r *http.Request) {
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
-	fmt.Println("Herehere")
 	name := mux.Vars(r)["name"]
 	resp, err := fe.getNameLength(r.Context(), name)
 	if err != nil {
