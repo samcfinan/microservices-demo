@@ -164,9 +164,13 @@ type nameServer struct{}
 func (n *nameServer) CheckName(ctx context.Context, nr *pb.NameRequest) (*pb.NameResponse, error) {
 	name := nr.GetName()
 	nameLength := int32(len(name))
-	letters := strings.Split(name, "")
-	perms := permutations(letters)
-	fmt.Println(perms)
+	if nameLength < 6 {
+		letters := strings.Split(name, "")
+		perms := permutations(letters)
+		fmt.Println(perms)
+	} else {
+		fmt.Println("Name too long, will not calculate permutations.")
+	}
 	return &pb.NameResponse{Name: name, NameLength: nameLength}, nil
 }
 

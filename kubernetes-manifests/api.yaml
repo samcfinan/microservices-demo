@@ -21,13 +21,6 @@ spec:
             value: "nameservice:9556"
           # - name: JAEGER_SERVICE_ADDR
           #   value: "jaeger-collector:14268"
-          resources:
-            requests:
-              cpu: 100m
-              memory: 64Mi
-            limits:
-              cpu: 200m
-              memory: 128Mi
 ---
 apiVersion: v1
 kind: Service

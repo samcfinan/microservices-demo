@@ -40,13 +40,6 @@ spec:
           value: "postgresadmin"
         - name: POSTGRES_PASS
           value: "admin123"
-        resources:
-          requests:
-            cpu: 100m
-            memory: 64Mi
-          limits:
-            cpu: 200m
-            memory: 128Mi
       initContainers:
       - name: check-db-ready
         image: postgres
