@@ -9,3 +9,6 @@ pkg/
 .idea
 .skaffold-*.yaml
 .kubernetes-manifests-*/
+hacks/
+k8-temp-files/
+old-release/
