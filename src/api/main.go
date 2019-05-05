@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"net"
+
+	pb "github.com/samcfinan/microservices-demo/src/api/genproto"
 
 	"cloud.google.com/go/profiler"
 	"contrib.go.opencensus.io/exporter/stackdriver"
@@ -44,6 +47,10 @@ var (
 type ctxKeySessionID struct{}
 
 type frontendServer struct {
+
+	mainServerSvcAddr string
+	mainServerSvcConn *grpc.ClientConn
+
 	productCatalogSvcAddr string
 	productCatalogSvcConn *grpc.ClientConn
 
@@ -87,31 +94,21 @@ func main() {
 	// go initTracing(log)
 
 	srvPort := port
+	grpcPort := port
 	if os.Getenv("PORT") != "" {
 		srvPort = os.Getenv("PORT")
+		grpcPort = os.Getenv("GRPC_PORT")
 	}
-	addr := os.Getenv("LISTEN_ADDR")
+	addr := os.Getenv("HTTP_LISTEN_ADDR")
 	svc := new(frontendServer)
 	mustMapEnv(&svc.nameSvcAddr, "NAME_SERVICE_ADDR")
 
 	mustConnGRPC(ctx, &svc.nameSvcConn, svc.nameSvcAddr)
-	// mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr)
-	// mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr)
-	// mustConnGRPC(ctx, &svc.cartSvcConn, svc.cartSvcAddr)
-	// mustConnGRPC(ctx, &svc.recommendationSvcConn, svc.recommendationSvcAddr)
-	// mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr)
-	// mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr)
-	// mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr)
+	go listenGrpc(grpcPort)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/name/{name}", svc.nameHandler).Methods(http.MethodGet, http.MethodHead)
-	// r.HandleFunc("/product/{id}", svc.productHandler).Methods(http.MethodGet, http.MethodHead)
-	// r.HandleFunc("/cart", svc.addToCartHandler).Methods(http.MethodPost)
-	// r.HandleFunc("/setCurrency", svc.setCurrencyHandler).Methods(http.MethodPost)
-	// r.HandleFunc("/logout", svc.logoutHandler).Methods(http.MethodGet)
-	// r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
-	// r.HandleFunc("/robots.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "User-agent: *\nDisallow: /") })
 	// r.HandleFunc("/_healthz", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "ok") })
 
 	var handler http.Handler = r
@@ -124,6 +121,22 @@ func main() {
 	log.Infof("starting server on " + addr + ":" + srvPort)
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
 }
+
+
+func listenGrpc(port string) {
+	l, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		fmt.Println("Failed to register.")
+	}
+	srv := grpc.NewServer()
+	svc := &frontendServer{}
+
+	// Register all servers here
+	pb.RegisterNameServiceServer(srv, svc)
+
+	srv.Serve(l)
+}
+
 
 func initJaegerTracing(log logrus.FieldLogger) {
 
