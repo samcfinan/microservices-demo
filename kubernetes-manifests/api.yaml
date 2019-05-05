@@ -19,6 +19,8 @@ spec:
           env:
           - name: NAME_SERVICE_ADDR
             value: "nameservice:9556"
+          - name: GRPC_PORT
+            value: "6323"
           # - name: JAEGER_SERVICE_ADDR
           #   value: "jaeger-collector:14268"
 ---
@@ -36,7 +38,7 @@ spec:
     targetPort: 8080
   - name: grpc
     port: 5000
-    targetPort: 5000
+    targetPort: 6323
 ---
 apiVersion: v1
 kind: Service

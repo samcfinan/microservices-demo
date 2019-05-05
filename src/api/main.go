@@ -26,12 +26,10 @@ import (
 
 const (
 	port            = "8080"
-	defaultCurrency = "USD"
 	cookieMaxAge    = 60 * 60 * 48
 
-	cookiePrefix    = "shop_"
+	cookiePrefix    = "micro_"
 	cookieSessionID = cookiePrefix + "session-id"
-	cookieCurrency  = cookiePrefix + "currency"
 )
 
 var (
@@ -42,6 +40,7 @@ var (
 		"JPY": true,
 		"GBP": true,
 		"TRY": true}
+	grpcPort string
 )
 
 type ctxKeySessionID struct{}
@@ -94,7 +93,6 @@ func main() {
 	// go initTracing(log)
 
 	srvPort := port
-	grpcPort := port
 	if os.Getenv("PORT") != "" {
 		srvPort = os.Getenv("PORT")
 		grpcPort = os.Getenv("GRPC_PORT")
@@ -124,9 +122,10 @@ func main() {
 
 
 func listenGrpc(port string) {
+	// log.Infof("starting gRPC listener on :" + port)
 	l, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
-		fmt.Println("Failed to register.")
+		fmt.Println("Failed to register gRPC listener.")
 	}
 	srv := grpc.NewServer()
 	svc := &frontendServer{}
