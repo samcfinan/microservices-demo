@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"sync"
 	"time"
-	"strings"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -28,13 +26,13 @@ import (
 
 var (
 	cat          pb.ListProductsResponse
-	catalogMutex *sync.Mutex
 	log          *logrus.Logger
 	extraLatency time.Duration
 
 	port = flag.Int("port", 9556, "port to listen at")
 
-	reloadCatalog bool
+	db    *gorm.DB
+	dbErr error
 )
 
 func init() {
@@ -48,7 +46,6 @@ func init() {
 		TimestampFormat: time.RFC3339Nano,
 	}
 	log.Out = os.Stdout
-	catalogMutex = &sync.Mutex{}
 }
 
 func main() {
@@ -56,10 +53,10 @@ func main() {
 	// go initProfiling("nameservice", "1.0.0")
 	flag.Parse()
 
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=postgres port=%s user=%s dbname=%s password=%s sslmode=disable", os.Getenv("POSTGRES_PORT"), os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_DB"), os.Getenv("POSTGRES_PASS")))
+	db, dbErr = gorm.Open("postgres", fmt.Sprintf("host=postgres port=%s user=%s dbname=%s password=%s sslmode=disable", os.Getenv("POSTGRES_PORT"), os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_DB"), os.Getenv("POSTGRES_PASS")))
 	defer db.Close()
-	if err != nil {
-		log.Panic("Cannot connect to Postgres:", err)
+	if dbErr != nil {
+		log.Panic("Cannot connect to Postgres:", dbErr)
 	}
 
 	log.Infof("starting grpc server at :%d", *port)
@@ -161,45 +158,17 @@ func initProfiling(service, version string) {
 
 type nameServer struct{}
 
+type Name struct {
+	Name   string
+	Length int32
+}
+
 func (n *nameServer) CheckName(ctx context.Context, nr *pb.NameRequest) (*pb.NameResponse, error) {
 	name := nr.GetName()
 	nameLength := int32(len(name))
-	if nameLength < 6 {
-		letters := strings.Split(name, "")
-		perms := permutations(letters)
-		fmt.Println(perms)
-	} else {
-		fmt.Println("Name too long, will not calculate permutations.")
-	}
+	na := Name{Name: name, Length: nameLength}
+	db.Create(&na)
 	return &pb.NameResponse{Name: name, NameLength: nameLength}, nil
-}
-
-func permutations(arr []string) [][]string {
-	var helper func([]string, int)
-	res := [][]string{}
-
-	helper = func(arr []string, n int){
-			if n == 1{
-					tmp := make([]string, len(arr))
-					copy(tmp, arr)
-					res = append(res, tmp)
-			} else {
-					for i := 0; i < n; i++{
-							helper(arr, n - 1)
-							if n % 2 == 1{
-									tmp := arr[i]
-									arr[i] = arr[n - 1]
-									arr[n - 1] = tmp
-							} else {
-									tmp := arr[0]
-									arr[0] = arr[n - 1]
-									arr[n - 1] = tmp
-							}
-					}
-			}
-	}
-	helper(arr, len(arr))
-	return res
 }
 
 func (n *nameServer) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
