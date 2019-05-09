@@ -1,22 +1,7 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -58,18 +43,6 @@ func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
 	// 	ps[i] = productView{p, price}
 	// }
 
-	// if err := templates.ExecuteTemplate(w, "home", map[string]interface{}{
-	// 	"session_id":    sessionID(r),
-	// 	"request_id":    r.Context().Value(ctxKeyRequestID{}),
-	// 	"user_currency": currentCurrency(r),
-	// 	"currencies":    currencies,
-	// 	"products":      ps,
-	// 	"cart_size":     len(cart),
-	// 	"banner_color":  os.Getenv("BANNER_COLOR"), // illustrates canary deployments
-	// 	"ad":            fe.chooseAd(r.Context(), []string{}, log),
-	// }); err != nil {
-	// 	log.Error(err)
-	// }
 	log.WithField("path", "/")
 	json.NewEncoder(w).Encode(map[string]string{"Status": "200"})
 }
@@ -82,7 +55,7 @@ func (fe *frontendServer) nameHandler(w http.ResponseWriter, r *http.Request) {
 		renderHTTPError(log, r, w, errors.Wrap(err, "Could not calculate name length"), http.StatusInternalServerError)
 	}
 
-	fmt.Println(name)
+	w.Header().Set("Content-type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
 

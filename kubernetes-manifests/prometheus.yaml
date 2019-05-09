@@ -49,3 +49,19 @@ spec:
   ports:
     - port: 8080
       targetPort: 9090 
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: prometheus-storage-volume
+  labels:
+    type: local
+    app: prometheus
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/prom"

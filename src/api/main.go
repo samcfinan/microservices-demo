@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"time"
-	"net"
 
 	pb "github.com/samcfinan/microservices-demo/src/api/genproto"
 
@@ -25,54 +25,22 @@ import (
 )
 
 const (
-	port            = "8080"
-	cookieMaxAge    = 60 * 60 * 48
+	port         = "8080"
+	cookieMaxAge = 60 * 60 * 24 // 24h
 
 	cookiePrefix    = "micro_"
 	cookieSessionID = cookiePrefix + "session-id"
 )
 
 var (
-	whitelistedCurrencies = map[string]bool{
-		"USD": true,
-		"EUR": true,
-		"CAD": true,
-		"JPY": true,
-		"GBP": true,
-		"TRY": true}
 	grpcPort string
 )
 
 type ctxKeySessionID struct{}
 
 type frontendServer struct {
-
-	mainServerSvcAddr string
-	mainServerSvcConn *grpc.ClientConn
-
-	productCatalogSvcAddr string
-	productCatalogSvcConn *grpc.ClientConn
-
-	currencySvcAddr string
-	currencySvcConn *grpc.ClientConn
-
-	cartSvcAddr string
-	cartSvcConn *grpc.ClientConn
-
-	recommendationSvcAddr string
-	recommendationSvcConn *grpc.ClientConn
-
-	checkoutSvcAddr string
-	checkoutSvcConn *grpc.ClientConn
-
-	shippingSvcAddr string
-	shippingSvcConn *grpc.ClientConn
-
 	nameSvcAddr string
 	nameSvcConn *grpc.ClientConn
-
-	adSvcAddr string
-	adSvcConn *grpc.ClientConn
 }
 
 func main() {
@@ -120,7 +88,6 @@ func main() {
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
 }
 
-
 func listenGrpc(port string) {
 	// log.Infof("starting gRPC listener on :" + port)
 	l, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
@@ -135,7 +102,6 @@ func listenGrpc(port string) {
 
 	srv.Serve(l)
 }
-
 
 func initJaegerTracing(log logrus.FieldLogger) {
 
