@@ -5,16 +5,15 @@ import (
 
 	pb "github.com/samcfinan/microservices-demo/src/api/genproto"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
-
 )
 
-// For gRPC
+// gRPC Handler
 func (fe *frontendServer) CheckName(ctx context.Context, nr *pb.NameRequest) (*pb.NameResponse, error) {
-	name := nr.GetName()
-	nameLength := int32(len(name))
-	return &pb.NameResponse{Name: name, NameLength: nameLength}, nil
+	resp, err := pb.NewNameServiceClient(fe.nameSvcConn).CheckName(ctx, nr)
+	return resp, err
 }
 
+// HTTP Handler
 func (fe *frontendServer) getNameLength(ctx context.Context, name string) (*pb.NameResponse, error) {
 	resp, err := pb.NewNameServiceClient(fe.nameSvcConn).CheckName(ctx, &pb.NameRequest{Name: name})
 
