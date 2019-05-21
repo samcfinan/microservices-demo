@@ -1,3 +1,33 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: prometheus-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data/prometheus"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: prometheus-server
+  name: prometheus-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
 # Prometheus cluster role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
@@ -65,9 +95,9 @@ spec:
           configMap:
             defaultMode: 420
             name: prometheus-server-conf
-
         - name: prometheus-storage-volume
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: prometheus-pv-claim
 ---
 apiVersion: v1
 kind: Service

@@ -59,7 +59,6 @@ func (fe *frontendServer) nameHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-
 func (fe *frontendServer) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	log.Debug("logging out")
@@ -72,15 +71,12 @@ func (fe *frontendServer) logoutHandler(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusFound)
 }
 
-
-
 func renderHTTPError(log logrus.FieldLogger, r *http.Request, w http.ResponseWriter, err error, code int) {
 	log.WithField("error", err).Error("request error")
 	// fmt.Sprintf("%+v", err)
 
 	w.WriteHeader(code)
 }
-
 
 func sessionID(r *http.Request) string {
 	v := r.Context().Value(ctxKeySessionID{})
